@@ -1,0 +1,70 @@
+#!/bin/bash
+
+echo "Welcom"
+sleep 2
+echo "how many pv do you want to create?"
+read pv
+for(( i=1; i<=$pv; i++ ))
+do
+        echo "type the name of disc number $i that you want to make pv"
+        read disc
+        pvcreate /dev/$disc
+done
+echo "type a name of the VG"
+read vg
+vgcreate $vg `pvdisplay | grep "PV Name" | awk ' {print $3 }' | tr '\n' ' '`
+echo "how lvm do you want to create?"
+read lvm
+for(( i=1; i<=$lvm; i++ ))
+do
+        echo "type the name of lvm number $i that you want to create"
+        read name_lvm
+        echo "type the size of the lvm"
+        read size_lvm
+        echo "which file system do you want to create (xfs,swap,ext4..)?"
+        read file_system
+        lvcreate --name $name_lvm --size $size_lvm $vg
+	if [ "$file_system" != "swap" ]
+	then
+        	mkfs.$file_system /dev/mapper/$vg-$name_lvm
+			echo "would you like do mount for the lvm?"
+			read mount
+			if [ "$mount" = "y" ] || [ "$mount" = "yes" ]
+			then
+                echo "enter the folder for the mount"
+                read folder
+                if [ ! -d "/$folder" ]
+                then
+                        echo "the folder that you choose is not exist, do you want to create this folder?"
+                        read answer_folder
+                        if [ "$answer_folder" = "y" ] || [ "$answer_folder" = "yes" ]
+                        then
+                                mkdir /$folder
+                        elif  [ "$answer_folder" = "n" ] || [ "$answer_folder" = "no" ]
+                        then
+                                echo "OK"
+                                break
+                        else
+                                echo "wrong answer"
+                                break
+                        fi
+				fi		
+                if [ -d "/$folder" ]
+                then
+                        echo "/dev/mapper/$vg-$name_lvm/     /$folder           $file_system    defaults    0 0" >> /etc/fstab
+                        mount /dev/mapper/$vg-$name_lvm/ /$folder
+                        echo -e "mount done and write in fstab file \ndone"
+                else
+                        echo "the mount is cacneld"
+				fi
+			fi	
+	elif [ "$file_system" = "swap" ]
+	then
+		swapoff -a
+		mkswap /dev/mapper/$vg-$name_lvm
+		swapon /dev/mapper/$vg-$name_lvm
+		echo "/dev/mapper/$vg-$name_lvm/     swap          swap    0 0" >> /etc/fstab
+    fi
+	
+			   
+done
