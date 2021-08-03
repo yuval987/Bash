@@ -1,0 +1,10 @@
+#!/bin/bash
+echo "enter a path:"
+read path
+cd $path
+count=$(ls -l | wc -l)
+for (( i=1; i<=$count-1; i++ ))
+do
+        folder=$(ls | awk 'NR=='$i'')
+        du -sh $folder
+done
