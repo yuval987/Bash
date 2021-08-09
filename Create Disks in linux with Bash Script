@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "Welcom"
+echo "Welcome"
 sleep 2
 echo "how many pv do you want to create?"
 read pv
